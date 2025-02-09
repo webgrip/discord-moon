@@ -82,7 +82,7 @@ def get_moon_label():
                 # We stepped into a previous month
                 break
             # Check if near-full at this step
-            mpos = get_moon(t_search)
+            mpos = get_body('moon', t_search)
             spos = get_sun(t_search)
             el = mpos.separation(spos)
             frac = (1 + np.cos(el.to(u.rad))) / 2
@@ -106,7 +106,7 @@ def get_moon_label():
             if dt_utc.month != current_month:
                 break
             # Check if near-new at this step
-            mpos = get_moon(t_search)
+            mpos = get_body('moon', t_search)
             spos = get_sun(t_search)
             el = mpos.separation(spos)
             frac = (1 + np.cos(el.to(u.rad))) / 2
