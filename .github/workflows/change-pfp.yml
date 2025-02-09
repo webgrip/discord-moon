@@ -29,22 +29,22 @@ jobs:
           phase=$(python get_phase.py)
           echo "Moon Phase: $phase"
           echo "moon_phase=$phase" >> $GITHUB_OUTPUT
-#  change-pfp:
-#    runs-on: ubuntu-latest
-#    needs: get-moon-phase
-#    steps:
-#      - name: Check out repository
-#        uses: actions/checkout@v4
-#
-#      - name: Set up Node.js
-#        uses: actions/setup-node@v4
-#        with:
-#          node-version: '20'
-#
-#      - name: Run js action
-#        uses: ./.github/actions/update-pfp
-#        env:
-#          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-#          API_TOKEN_2CAPTCHA: ${{ secrets.API_TOKEN_2CAPTCHA }}
-#        with:
-#          imageFile: images/${{ needs.get-moon-phase.outputs.moon-phase }}.png
+  change-pfp:
+    runs-on: ubuntu-latest
+    needs: get-moon-phase
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run js action
+        uses: ./.github/actions/update-pfp
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          API_TOKEN_2CAPTCHA: ${{ secrets.API_TOKEN_2CAPTCHA }}
+        with:
+          imageFile: images/${{ needs.get-moon-phase.outputs.moon-phase }}.png
