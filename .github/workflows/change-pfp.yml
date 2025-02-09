@@ -45,5 +45,6 @@ jobs:
         uses: ./.github/actions/update-pfp
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          API_TOKEN_2CAPTCHA: ${{ secrets.API_TOKEN_2CAPTCHA }}
         with:
           imageFile: images/${{ needs.get-moon-phase.outputs.moon-phase }}.png

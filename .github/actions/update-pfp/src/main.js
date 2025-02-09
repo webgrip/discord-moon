@@ -2,6 +2,7 @@ const core = require('@actions/core');
 const { Client } = require('discord.js-selfbot-v13');
 const fs = require('fs');
 const path = require('path');
+const captcha = require('2captcha');
 
 async function run() {
   try {
@@ -21,7 +22,22 @@ async function run() {
 
     console.log(`[DEBUG] Successfully read image file. Size: ${fileData.length} bytes`);
 
-    const client = new Client();
+    const solver = new captcha.Solver(process.env.API_TOKEN_2CAPTCHA);
+
+    const client = new Client({
+      captchaSolver: function(captcha, UA) {
+        return solver
+            .hcaptcha(
+                captcha.captcha_sitekey,
+                'discord.com',
+                {
+                  invisible: 1,
+                  userAgent: UA,
+                  data: captcha.captcha_rqdata
+                }
+            ).then(res => res.data);
+      },
+    });
 
     client.on('ready', async () => {
       console.log(`[DEBUG] Logged in as: ${client.user?.tag} - Attempting to update avatar...`);
