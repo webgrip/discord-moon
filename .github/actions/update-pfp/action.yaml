@@ -6,6 +6,6 @@ runs:
   main: "dist/index.js"
 
 inputs:
-  image:
+  imageFile:
     description: "Image to set as profile picture"
     required: true

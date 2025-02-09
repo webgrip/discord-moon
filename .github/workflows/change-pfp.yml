@@ -46,4 +46,4 @@ jobs:
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         with:
-          image: ${{ needs.get-moon-phase.outputs.moon-phase }}.png
+          imageFile: images/${{ needs.get-moon-phase.outputs.moon-phase }}.png
