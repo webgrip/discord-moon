@@ -43,11 +43,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: |
-          npm install
-        working-directory: ./.github/workflows/actions/change-pfp
-
       - name: Run js action
         uses: ./.github/workflows/actions/change-pfp
         with:
