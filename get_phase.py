@@ -134,6 +134,10 @@ def get_moon_label():
     cycle_fraction = (days_since_ref % synodic_month) / synodic_month
     debug_lines.append(f"Cycle fraction = {cycle_fraction:.4f} (time-based)")
 
+    # --> Compute the Moon's age in days (time since last new moon)
+    moon_age_days = cycle_fraction * synodic_month
+    debug_lines.append(f"Moon Age ~ {moon_age_days:.2f} days since last new moon")
+
     # 7) Final label by priority
     label = None
     if might_be_eclipse:
