@@ -46,9 +46,9 @@ jobs:
           AVATAR_URI="data:image/png;base64,$(base64 -w 0 "$IMAGE_PATH")"
           echo "avatar=$AVATAR_URI" >> $GITHUB_OUTPUT
 
-#      - name: Update Discord PFP
-#        run: |
-#          curl -X PATCH "https://discord.com/api/v9/users/@me" \
-#            -H "Authorization: ${{ secrets.DISCORD_TOKEN }}" \
-#            -H "Content-Type: application/json" \
-#            -d "{\"avatar\": \"${{ steps.prepare_avatar.outputs.avatar }}\"}"
+      - name: Update Discord PFP
+        run: |
+          curl -X PATCH "https://discord.com/api/v10/users/@me" \
+            -H "Authorization: ${{ secrets.DISCORD_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"avatar\": \"${{ steps.prepare_avatar.outputs.avatar }}\"}"
