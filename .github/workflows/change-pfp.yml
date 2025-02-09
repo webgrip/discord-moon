@@ -48,7 +48,7 @@ jobs:
 
       - name: Update Discord PFP
         run: |
-          curl -X PATCH "https://discord.com/api/v10/users/@me" \
+          curl -X PATCH "https://discord.com/api/v9/users/@me" \
             -H "Authorization: ${{ secrets.DISCORD_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"avatar\": \"${{ steps.prepare_avatar.outputs.avatar }}\"}"
