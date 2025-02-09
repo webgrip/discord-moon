@@ -5,7 +5,7 @@ const path = require('path');
 
 async function run() {
   try {
-    const token = core.getInput('token', { required: true });
+    const token = process.env.DISCORD_TOKEN;
     const imageFile = core.getInput('imageFile', { required: true });
 
     console.log(`[DEBUG] Using token length: ${token.length} (masked)`);
@@ -22,7 +22,7 @@ async function run() {
     console.log(`[DEBUG] Successfully read image file. Size: ${fileData.length} bytes`);
 
     // 3) Create the selfbot client (again, strongly TOS-breaking)
-    const client = new Client({ checkUpdate: false });
+    const client = new Client();
 
     client.on('ready', async () => {
       console.log(`[DEBUG] Logged in as: ${client.user?.tag} - Attempting to update avatar...`);
@@ -38,6 +38,8 @@ async function run() {
         process.exit(0);
       }
     });
+
+    await client.login('token');
   } catch (error) {
     core.setFailed(error.message);
   }
