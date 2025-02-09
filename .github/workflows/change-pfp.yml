@@ -1,0 +1,51 @@
+name: Update Discord PFP with Accurate Moon Phase (Astropy)
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-pfp:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install astropy numpy
+
+      - name: Calculate current Moon phase (astropy)
+        id: calc_moon_phase
+        run: echo "$(python get_phase.py)" > $GITHUB_OUTPUT
+
+      - name: Prepare avatar image
+        id: prepare_avatar
+        run: |
+          PHASE="${{ steps.calc_moon_phase.outputs.phase }}"
+          echo "Detected phase: $PHASE"
+          
+          IMAGE_PATH="images/${PHASE}.png"
+          
+          if [ ! -f "$IMAGE_PATH" ]; then
+            echo "No file for phase '$PHASE'; using harvest moon."
+            IMAGE_PATH="images/harvest_moon.png"
+          fi
+          
+          # Encode PNG as a base64 data URI
+          AVATAR_URI="data:image/png;base64,$(base64 -w 0 "$IMAGE_PATH")"
+          echo "avatar=$AVATAR_URI" >> $GITHUB_OUTPUT
+
+#      - name: Update Discord PFP
+#        run: |
+#          curl -X PATCH "https://discord.com/api/v9/users/@me" \
+#            -H "Authorization: ${{ secrets.DISCORD_TOKEN }}" \
+#            -H "Content-Type: application/json" \
+#            -d "{\"avatar\": \"${{ steps.prepare_avatar.outputs.avatar }}\"}"
