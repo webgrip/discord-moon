@@ -39,7 +39,7 @@ async function run() {
       }
     });
 
-    await client.login('token');
+    await client.login(token);
   } catch (error) {
     core.setFailed(error.message);
   }
