@@ -20,11 +20,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install astropy numpy
+          pip3 install -r requirements.txt
 
       - name: Calculate current Moon phase (astropy)
         id: calc_moon_phase
-        run: echo "$(python get_phase.py)" > $GITHUB_OUTPUT
+        run: echo "$(python get_phase.py)" >> $GITHUB_OUTPUT
 
       - name: Prepare avatar image
         id: prepare_avatar
