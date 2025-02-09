@@ -1,0 +1,11 @@
+{
+  "name": "update-pfp",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node src/main.js"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "discord.js-selfbot-v13": "^3.5.1"
+  }
+}

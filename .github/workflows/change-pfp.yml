@@ -6,12 +6,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-pfp:
+  get-moon-phase:
     runs-on: ubuntu-latest
-
+    outputs:
+      moon-phase: ${{ steps.get_moon_phase.outputs.moon_phase }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -28,27 +29,25 @@ jobs:
           phase=$(python get_phase.py)
           echo "Moon Phase: $phase"
           echo "moon_phase=$phase" >> $GITHUB_OUTPUT
+  change-pfp:
+    runs-on: ubuntu-latest
+    needs: get-moon-phase
+#    env:
+#      DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: Prepare avatar image
-        id: prepare_avatar
-        run: |
-          PHASE="${{ steps.get_moon_phase.outputs.moon_phase }}"
-          echo "Detected phase: $PHASE"
-          
-          IMAGE_PATH="images/${PHASE}.png"
-          
-          if [ ! -f "$IMAGE_PATH" ]; then
-            echo "No file for phase '$PHASE'; using harvest moon."
-            IMAGE_PATH="images/harvest_moon.png"
-          fi
-          
-          # Encode PNG as a base64 data URI
-          AVATAR_URI="data:image/png;base64,$(base64 -w 0 "$IMAGE_PATH")"
-          echo "avatar=$AVATAR_URI" >> $GITHUB_OUTPUT
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Update Discord PFP
+      - name: Install dependencies
         run: |
-          curl -X PATCH "https://discord.com/api/v9/users/@me" \
-            -H "Authorization: ${{ secrets.DISCORD_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"avatar\": \"${{ steps.prepare_avatar.outputs.avatar }}\"}"
+          npm install
+
+      - name: Run js action
+        uses: ./.github/workflows/actions/change-pfp
+        with:
+          moon_phase: ${{ needs.get-moon-phase.outputs.moon-phase }}.png

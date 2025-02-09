@@ -1,0 +1,11 @@
+name: "Update Discord Profile Picture"
+desciption: "Update Discord Profile Picture with a new image"
+author: "Ryan Grippeling <ryan@webgrip.nl>"
+runs:
+  using: "node20"
+  main: "index.js"
+
+inputs:
+  image:
+    description: "Image to set as profile picture"
+    required: true
