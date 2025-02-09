@@ -1,7 +1,13 @@
+import sys
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import get_sun, get_body, GeocentricTrueEcliptic
+from astropy.coordinates import (
+    EarthLocation,
+    get_sun,
+    get_body,
+    GeocentricTrueEcliptic
+)
 import datetime
 
 def get_moon_label():
@@ -13,75 +19,79 @@ def get_moon_label():
       4) 'harvest_moon'
       5) 'supermoon'
       6) 'micro_moon'
-      7) else one of the basic 8 phases:
+      7) else one of the 8 standard phases:
          'new_moon', 'waxing_crescent', 'first_quarter', 'waxing_gibbous',
          'full_moon', 'waning_gibbous', 'last_quarter', 'waning_crescent'.
 
-    This is a demo. Real astronomy for eclipses, equinox-based harvest moons,
+    Real astronomy for eclipses, equinox-based harvest moons,
     etc. can be more complex.
     """
 
+    debug_lines = []
+
+    # Location: Amsterdam, Netherlands
+    nl_location = EarthLocation(lat=52.3676*u.deg, lon=4.9041*u.deg, height=0*u.m)
+    debug_lines.append(f"Using Netherlands (Amsterdam approx) location for topocentric coords.")
+
     # Current UTC time
     now = Time.now()
+    debug_lines.append(f"Current UTC (ISO): {now.isot}")
 
     # Geocentric positions of Sun and Moon
     moon_pos = get_body('moon', now)
     sun_pos = get_sun(now)
 
-    # 1) PHASE FRACTION: (1 + cos angular separation) / 2
+    # 1) PHASE FRACTION = (1 + cos angular separation) / 2
     elongation = moon_pos.separation(sun_pos)
-    phase_fraction = (1 + np.cos(elongation.to(u.rad))) / 2  # 0..1
+    phase_fraction = (1 + np.cos(elongation.to(u.rad))) / 2  # range 0..1
+    debug_lines.append(f"Elongation: {elongation:.3f}, Phase fraction: {phase_fraction:.4f}")
 
-    # 2) DISTANCE to the Moon (km)
+    # 2) DISTANCE from observer to the Moon (km)
     distance_km = moon_pos.distance.to(u.km).value
+    debug_lines.append(f"Observer-to-Moon distance (km): {distance_km:.1f}")
 
-    # 3) ECLIPTIC LAT (for rough eclipse check)
+    # 3) Approx ecliptic latitude for rough eclipse check, from topocentric coords
     moon_ecliptic = moon_pos.transform_to(GeocentricTrueEcliptic(equinox=now))
     ecliptic_lat_deg = moon_ecliptic.lat.to(u.deg).value
+    debug_lines.append(f"Ecliptic lat (deg): {ecliptic_lat_deg:.3f}")
 
     # Define thresholds
-    FULL_MOON_THRESHOLD = 0.95   # fraction >= 0.95 => near full
-    NEW_MOON_THRESHOLD  = 0.05   # fraction <= 0.05 => near new
-    SUPERMOON_PERIGEE   = 360000 # ~360,000 km as a rough cutoff for "supermoon"
-    MICRO_MOON_APOGEE   = 405000 # ~405,000 km as a rough cutoff for "micro_moon"
-    ECLIPTIC_LAT_THRESH = 1.5    # deg from ecliptic => possible eclipse if near full
+    FULL_MOON_THRESHOLD = 0.95
+    NEW_MOON_THRESHOLD  = 0.05
+    SUPERMOON_PERIGEE   = 360000
+    MICRO_MOON_APOGEE   = 405000
+    ECLIPTIC_LAT_THRESH = 1.5
 
     is_near_full  = (phase_fraction > FULL_MOON_THRESHOLD)
     is_near_new   = (phase_fraction < NEW_MOON_THRESHOLD)
     is_near_eclip = (abs(ecliptic_lat_deg) < ECLIPTIC_LAT_THRESH)
 
-    # 4) Rough Eclipse Check (blood moon)
-    #    For a real eclipse check, you'd compute Earth’s umbra geometry.
-    #    We'll just say "lunar_eclipse" if near full + near ecliptic.
+    debug_lines.append(f"is_near_full={is_near_full}, is_near_new={is_near_new}, is_near_eclip={is_near_eclip}")
+
+    # 4) Rough Eclipse Check: near full + near ecliptic
     might_be_eclipse = is_near_full and is_near_eclip
 
-    # 5) Supermoon / Micro Moon (if near full)
-    #    Common definitions vary. We'll say "supermoon" if < 360,000 km
-    #    from Earth AND near full; "micro_moon" if > 405,000 km AND near full.
+    # 5) Supermoon / Micro Moon if near full
     is_supermoon  = (distance_km < SUPERMOON_PERIGEE and is_near_full)
-    is_micro_moon = (distance_km > MICRO_MOON_APOGEE  and is_near_full)
+    is_micro_moon = (distance_km > MICRO_MOON_APOGEE and is_near_full)
 
-    # 6) Harvest Moon (near full in late Sept or early Oct)
+    # 6) Harvest Moon: near full in late Sept or early Oct
     d_utc = now.to_datetime()  # Python datetime in UTC
     is_harvest_time = (d_utc.month == 9 or d_utc.month == 10)
     is_harvest_moon = (is_harvest_time and is_near_full)
 
-    # 7) Blue Moon (second full moon in the same calendar month)
-    #    We'll do a quick backward search to see if there's another near-full
-    #    within this month. Approximate, but works OK in practice.
+    # 7) Blue Moon: second full moon in the same calendar month
     is_blue_moon = False
     if is_near_full:
         current_month = d_utc.month
-        day_step = 0.5  # half-day increments
+        day_step = 0.5
         t_search = now
         found_another_full = False
-        for _ in range(60):  # 60 half-day steps => up to 30 days
+        for _ in range(60):  # up to 30 days
             t_search = t_search - day_step*u.day
             dt_utc = t_search.to_datetime()
             if dt_utc.month != current_month:
-                # We stepped into a previous month
                 break
-            # Check if near-full at this step
             mpos = get_body('moon', t_search)
             spos = get_sun(t_search)
             el = mpos.separation(spos)
@@ -90,22 +100,20 @@ def get_moon_label():
                 found_another_full = True
                 break
         is_blue_moon = found_another_full
+    debug_lines.append(f"is_blue_moon={is_blue_moon}")
 
-    # 8) Black Moon (second new moon in the same calendar month)
-    #    Similar approach: if is_near_new, look backward to see if there's
-    #    another near-new in the same month.
+    # 8) Black Moon: second new moon in the same month
     is_black_moon = False
     if is_near_new:
         current_month = d_utc.month
         day_step = 0.5
         t_search = now
         found_another_new = False
-        for _ in range(60):  # up to ~30 days
+        for _ in range(60):
             t_search = t_search - day_step*u.day
             dt_utc = t_search.to_datetime()
             if dt_utc.month != current_month:
                 break
-            # Check if near-new at this step
             mpos = get_body('moon', t_search)
             spos = get_sun(t_search)
             el = mpos.separation(spos)
@@ -114,42 +122,51 @@ def get_moon_label():
                 found_another_new = True
                 break
         is_black_moon = found_another_new
+    debug_lines.append(f"is_black_moon={is_black_moon}")
 
-    # 9) Priority or Combining Labels
-    #    A single date can be "Super Blue Blood Moon," etc.
-    #    Here we pick ONLY ONE label in a chain:
+    # 9) Decide final label by priority
+    label = None
     if might_be_eclipse:
-        return "lunar_eclipse"       # a.k.a. "blood_moon"
+        label = "lunar_eclipse"
     elif is_blue_moon:
-        return "blue_moon"
+        label = "blue_moon"
     elif is_black_moon:
-        return "black_moon"
+        label = "black_moon"
     elif is_harvest_moon:
-        return "harvest_moon"
+        label = "harvest_moon"
     elif is_supermoon:
-        return "supermoon"
+        label = "supermoon"
     elif is_micro_moon:
-        return "micro_moon"
-
-    # Otherwise, pick from the 8 standard phases:
-    if is_near_new:
-        return "new_moon"
-    elif phase_fraction < 0.1875:
-        return "waxing_crescent"
-    elif phase_fraction < 0.3125:
-        return "first_quarter"
-    elif phase_fraction < 0.4375:
-        return "waxing_gibbous"
-    elif phase_fraction < 0.5625:
-        return "full_moon"
-    elif phase_fraction < 0.6875:
-        return "waning_gibbous"
-    elif phase_fraction < 0.8125:
-        return "last_quarter"
-    elif phase_fraction < 0.9375:
-        return "waning_crescent"
+        label = "micro_moon"
     else:
-        return "new_moon"  # near 1.0 again
+        # Fall back to 8-phase logic
+        if is_near_new:
+            label = "new_moon"
+        elif phase_fraction < 0.1875:
+            label = "waxing_crescent"
+        elif phase_fraction < 0.3125:
+            label = "first_quarter"
+        elif phase_fraction < 0.4375:
+            label = "waxing_gibbous"
+        elif phase_fraction < 0.5625:
+            label = "full_moon"
+        elif phase_fraction < 0.6875:
+            label = "waning_gibbous"
+        elif phase_fraction < 0.8125:
+            label = "last_quarter"
+        elif phase_fraction < 0.9375:
+            label = "waning_crescent"
+        else:
+            label = "new_moon"
+
+    debug_lines.append(f"Final label: {label}")
+
+    # Print debug info to stderr so it doesn't conflict with GH Actions output
+    for dbg in debug_lines:
+        print(f"[DEBUG] {dbg}", file=sys.stderr)
+
+    return label
 
 if __name__ == "__main__":
+    # Output only the final label to stdout
     print(get_moon_label(), end="")

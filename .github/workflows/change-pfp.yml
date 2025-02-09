@@ -22,9 +22,12 @@ jobs:
         run: |
           pip3 install -r requirements.txt
 
-      - name: Calculate current Moon phase (astropy)
-        id: calc_moon_phase
-        run: echo "$(python get_phase.py)" >> $GITHUB_OUTPUT
+      - name: Get Moon Phase
+        id: get_moon_phase
+        run: |
+          phase=$(python get_phase.py)
+          echo "Moon Phase: $phase"
+          echo "moon_phase=$phase" >> $GITHUB_OUTPUT
 
       - name: Prepare avatar image
         id: prepare_avatar
