@@ -32,7 +32,7 @@ jobs:
       - name: Prepare avatar image
         id: prepare_avatar
         run: |
-          PHASE="${{ steps.calc_moon_phase.outputs.phase }}"
+          PHASE="${{ steps.get_moon_phase.outputs.moon_phase }}"
           echo "Detected phase: $PHASE"
           
           IMAGE_PATH="images/${PHASE}.png"

@@ -43,7 +43,7 @@ def get_moon_label():
 
     # 1) PHASE FRACTION = (1 + cos angular separation) / 2
     elongation = moon_pos.separation(sun_pos)
-    phase_fraction = (1 + np.cos(elongation.to(u.rad))) / 2  # range 0..1
+    phase_fraction = (1 - np.cos(elongation.to(u.rad))) / 2
     debug_lines.append(f"Elongation: {elongation:.3f}, Phase fraction: {phase_fraction:.4f}")
 
     # 2) DISTANCE from observer to the Moon (km)
