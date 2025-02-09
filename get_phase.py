@@ -1,7 +1,7 @@
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import get_sun, get_moon, GeocentricTrueEcliptic
+from astropy.coordinates import get_sun, get_body, GeocentricTrueEcliptic
 import datetime
 
 def get_moon_label():
@@ -25,7 +25,7 @@ def get_moon_label():
     now = Time.now()
 
     # Geocentric positions of Sun and Moon
-    moon_pos = get_moon(now)
+    moon_pos = get_body('moon', now)
     sun_pos = get_sun(now)
 
     # 1) PHASE FRACTION: (1 + cos angular separation) / 2
