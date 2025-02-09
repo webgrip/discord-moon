@@ -44,6 +44,6 @@ jobs:
           node-version: '20'
 
       - name: Run js action
-        uses: ./.github/workflows/actions/change-pfp
+        uses: ./.github/actions/change-pfp
         with:
           moon_phase: ${{ needs.get-moon-phase.outputs.moon-phase }}.png
