@@ -33,7 +33,6 @@ async function run() {
         core.setFailed(`Failed to update avatar: ${error.message}`);
       } finally {
         client.destroy();
-        process.exit(0);
       }
     });
 
