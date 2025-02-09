@@ -42,9 +42,9 @@ jobs:
           node-version: '20'
 
       - name: Run js action
-        uses: ./.github/actions/update-pfp
+        uses: webgrip/discord-change-avatar-action@v1
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           API_TOKEN_2CAPTCHA: ${{ secrets.API_TOKEN_2CAPTCHA }}
         with:
-          imageFile: images/${{ needs.get-moon-phase.outputs.moon-phase }}.png
+          imagePath: images/${{ needs.get-moon-phase.outputs.moon-phase }}.png
