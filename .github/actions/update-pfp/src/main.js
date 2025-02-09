@@ -21,15 +21,13 @@ async function run() {
 
     console.log(`[DEBUG] Successfully read image file. Size: ${fileData.length} bytes`);
 
-    // 3) Create the selfbot client (again, strongly TOS-breaking)
     const client = new Client();
 
     client.on('ready', async () => {
       console.log(`[DEBUG] Logged in as: ${client.user?.tag} - Attempting to update avatar...`);
 
       try {
-        // 4) Use the selfbot method to update your user avatar
-        // await client.user?.setAvatar(base64Image);
+        await client.user?.setAvatar(base64Image);
         console.log("Avatar updated successfully!");
       } catch (error) {
         core.setFailed(`Failed to update avatar: ${error.message}`);
