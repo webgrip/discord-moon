@@ -3,7 +3,7 @@ desciption: "Update Discord Profile Picture with a new image"
 author: "Ryan Grippeling <ryan@webgrip.nl>"
 runs:
   using: "node20"
-  main: "index.js"
+  main: "dist/index.js"
 
 inputs:
   image:
