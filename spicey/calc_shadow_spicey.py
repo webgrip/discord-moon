@@ -14,7 +14,7 @@ import astropy.units as u
 from PIL import Image, ImageFilter
 
 # Configure logging to show both INFO and DEBUG messages.
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- SPICE Kernel Loading ---
@@ -27,6 +27,7 @@ spice.furnsh("moon.tm")
 # --- Observer Location ---
 # Example: Amsterdam, Netherlands.
 nl_location = EarthLocation(lat=52.3676 * u.deg, lon=4.9041 * u.deg, height=0 * u.m)
+new_zealand = EarthLocation(lat=-41.2865 * u.deg, lon=174.7762 * u.deg, height=0 * u.m)
 
 def transform_sun_vector_to_local(S, moon_pos):
     """
@@ -239,8 +240,8 @@ def plot_shadow(moon_data, time_str, R=1.0, resolution=512, filename="output/sha
     X, Y = np.meshgrid(xs, ys)
     R2 = X**2 + Y**2
     mask = R2 <= R**2
-    logging.debug(f"Grid shape: {X.shape}")
-    logging.debug(f"Number of pixels inside disk: {np.sum(mask)}")
+    logging.info(f"Grid shape: {X.shape}")
+    logging.info(f"Number of pixels inside disk: {np.sum(mask)}")
 
     # Compute z for pixels inside the disk.
     Z = np.zeros_like(X)
@@ -250,12 +251,12 @@ def plot_shadow(moon_data, time_str, R=1.0, resolution=512, filename="output/sha
     illumination = np.full_like(X, -1e10, dtype=float)
     illumination[mask] = X[mask]*S[0] + Y[mask]*S[1] + Z[mask]*S[2]
 
-    logging.debug(f"Illumination stats (inside disk): min = {np.min(illumination[mask]):.3f}, "
+    logging.info(f"Illumination stats (inside disk): min = {np.min(illumination[mask]):.3f}, "
                   f"max = {np.max(illumination[mask]):.3f}, mean = {np.mean(illumination[mask]):.3f}, "
                   f"median = {np.median(illumination[mask]):.3f}")
     lit_pixels = np.sum(illumination[mask] > 0)
     shadow_pixels = np.sum(illumination[mask] <= 0)
-    logging.debug(f"Number of lit pixels: {lit_pixels}, shadow pixels: {shadow_pixels}")
+    logging.info(f"Number of lit pixels: {lit_pixels}, shadow pixels: {shadow_pixels}")
     percent_lit = lit_pixels / (lit_pixels + shadow_pixels) * 100
     logging.info(f"Percentage of lit pixels: {percent_lit:.1f}%")
 
@@ -266,7 +267,7 @@ def plot_shadow(moon_data, time_str, R=1.0, resolution=512, filename="output/sha
     # pixels with illumination <= 0 (shadow) get alpha 51 (~20% opacity).
     alpha = np.zeros_like(X, dtype=float)
     alpha[mask] = np.where(illumination[mask] > 0, 0, 51)
-    logging.debug(f"Alpha channel stats (inside disk): min = {np.min(alpha[mask]):.1f}, "
+    logging.info(f"Alpha channel stats (inside disk): min = {np.min(alpha[mask]):.1f}, "
                   f"max = {np.max(alpha[mask]):.1f}, mean = {np.mean(alpha[mask]):.1f}")
 
     # Build the RGBA image array (black with the computed alpha).
@@ -311,18 +312,23 @@ def main():
     logging.info("Starting professional moon phase image generation with SPICE/SpiceyPy")
     os.makedirs("output", exist_ok=True)
     # Set the observation time (UTC). Adjust as needed.
-    time_str = '2025-02-12T00:00:00'
+    time_str = '2025-02-11T18:30:00'
     logging.info(f"Observation time: {time_str}")
+
+    # Set the observer location (EarthLocation object).
+    location = new_zealand
+    logging.info(f"Observer location: {location}")
+
     R = 1  # Moon radius in arbitrary units.
     resolution = 512  # Use fixed resolution for images.
 
     # Compute Moon data.
-    moon_data = get_moon_data(time_str, R, resolution=resolution, location=nl_location)
+    moon_data = get_moon_data(time_str, R, resolution=resolution, location=location)
 
     # Generate the white Moon image.
     plot_white_moon(R, resolution=resolution, filename="output/moon.png")
     # Generate the shadow overlay using SPICE-derived Sun vector.
-    plot_shadow(moon_data, time_str, R, resolution=resolution, filename="output/shadow.png", location=nl_location)
+    plot_shadow(moon_data, time_str, R, resolution=resolution, filename="output/shadow.png", location=location)
     # Composite the images.
     plot_final(filename="output/final.png")
 
