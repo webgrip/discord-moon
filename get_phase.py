@@ -55,7 +55,7 @@ def get_moon_label():
     debug_lines.append(f"Ecliptic lat (deg) = {ecliptic_lat_deg:.3f}")
 
     # 3) Basic thresholds
-    FULL_MOON_THRESHOLD = 0.95
+    FULL_MOON_THRESHOLD = 0.995
     NEW_MOON_THRESHOLD  = 0.05
     SUPERMOON_PERIGEE   = 360000  # km
     MICRO_MOON_APOGEE   = 405000  # km
