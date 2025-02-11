@@ -153,8 +153,8 @@ def get_moon_label():
     elif is_micro_moon:
         label = "micro_moon"
     else:
-        # 8-phase logic based on cycle_fraction
-        #  We define each phase in 1/8 increments
+        # 8-phase logic based on cycle_fraction (fallback for phases)
+        # Note: We only label as "full_moon" if the actual illumination fraction is near full.
         if cycle_fraction < 0.0625 or cycle_fraction >= 0.9375:
             label = "new_moon"
         elif cycle_fraction < 0.1875:
@@ -164,7 +164,13 @@ def get_moon_label():
         elif cycle_fraction < 0.4375:
             label = "waxing_gibbous"
         elif cycle_fraction < 0.5625:
-            label = "full_moon"
+            # Normally this phase would be "full_moon" by time,
+            # but only label it so if the geometry indicates near full.
+            if is_near_full:
+                label = "full_moon"
+            else:
+                # Otherwise, decide whether it's waxing or waning gibbous.
+                label = "waxing_gibbous" if cycle_fraction < 0.5 else "waning_gibbous"
         elif cycle_fraction < 0.6875:
             label = "waning_gibbous"
         elif cycle_fraction < 0.8125:
