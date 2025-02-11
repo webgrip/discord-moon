@@ -1,0 +1,5 @@
+services:
+  moon:
+    build: .
+    volumes:
+      - ./output:/app/output
