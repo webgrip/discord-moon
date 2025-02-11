@@ -1,0 +1,5 @@
+astropy~=7.0.1
+numpy~=2.2.2
+matplotlib~=3.10.0
+shapely~=2.0.7
+spiceypy~=5.1.2

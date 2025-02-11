@@ -1,5 +1,13 @@
 services:
   moon:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
-      - ./output:/app/output
+      - ./output/moon:/app/output
+  spicey:
+    build:
+      context: ./spicey
+      dockerfile: Dockerfile
+    volumes:
+      - ./output/spicey:/app/output
