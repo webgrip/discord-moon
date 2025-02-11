@@ -13,18 +13,20 @@ import astropy.units as u
 
 from PIL import Image, ImageFilter
 
-# Configure logging to show both INFO and DEBUG messages.
+# ------------------------------------------------------------------------------
+# Configure logging to show both INFO and DEBUG messages in a friendly format.
+# ------------------------------------------------------------------------------
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- SPICE Kernel Loading ---
 # Load the SPICE kernels using your meta-kernel.
 # (Make sure the file "moon.tm" is in the current working directory.)
-logging.info("Loading SPICE kernels from moon.tm")
+logging.info("🌌 Loading SPICE kernels from 'moon.tm' ...")
 spice.furnsh("moon.tm")
 # (When done, you can later call spice.kclear())
 
-# --- Observer Location ---
+# --- Observer Locations ---
 # Example: Amsterdam, Netherlands.
 nl_location = EarthLocation(lat=52.3676 * u.deg, lon=4.9041 * u.deg, height=0 * u.m)
 new_zealand = EarthLocation(lat=-41.2865 * u.deg, lon=174.7762 * u.deg, height=0 * u.m)
@@ -63,7 +65,6 @@ def transform_sun_vector_to_local(S, moon_pos):
     return S_local
 
 # --- Functions for Ephemeris & Moon Data Computation using SPICE ---
-
 def compute_phase_and_position_angle(time_str, location):
     """
     Using SPICE, compute:
@@ -77,11 +78,10 @@ def compute_phase_and_position_angle(time_str, location):
     try:
         et = spice.utc2et(time_str)
     except spice.utils.exceptions.SpiceyError as e:
-        logging.error("Error converting UTC to ET. Have you loaded the leapseconds kernel?")
+        logging.error("❌ Error converting UTC to ET. Make sure the leapseconds kernel is loaded!")
         raise
 
     # Get the Moon state relative to Earth in the J2000 frame.
-    # (spkpos returns the position (km) and light time.)
     moon_pos, lt1 = spice.spkpos("MOON", et, "J2000", "NONE", "EARTH")
     # Get the Sun state relative to the Moon.
     sun_pos, lt2 = spice.spkpos("SUN", et, "J2000", "NONE", "MOON")
@@ -96,15 +96,11 @@ def compute_phase_and_position_angle(time_str, location):
     phase_angle = np.degrees(np.arccos(np.clip(cos_phase, -1, 1)))
     # Illuminated fraction.
     f = (1 + np.cos(np.radians(phase_angle)))/2
-    # An approximate terminator rotation angle (not used for pixel shading but for logging)
-    # Here we simply set rot_angle = (90 - phase_angle/2) for demonstration.
+    # An approximate terminator rotation angle (for logging purposes)
     rot_angle = 90 - phase_angle/2
 
     # Compute elongation: angular separation between Sun and Moon as seen from Earth.
-    # Use the dot product formula. (Moon position relative to Earth is moon_pos.)
-    # Get Sun state relative to Earth.
     sun_earth, lt3 = spice.spkpos("SUN", et, "J2000", "NONE", "EARTH")
-    # Normalize
     v_moon = np.array(moon_pos) / np.linalg.norm(moon_pos)
     v_sun  = np.array(sun_earth) / np.linalg.norm(sun_earth)
     cos_elon = np.dot(v_moon, v_sun)
@@ -113,8 +109,6 @@ def compute_phase_and_position_angle(time_str, location):
     # Distance from Earth to Moon (in km)
     distance = np.linalg.norm(moon_pos)
 
-    logging.info(f"Phase angle: {phase_angle:.1f}°, f: {f:.3f}, rot_angle: {rot_angle:.1f}°, " +
-                 f"elongation: {elongation:.1f}°, distance: {distance:,.0f} km")
     return phase_angle, f, rot_angle, elongation, distance
 
 def determine_moon_stage(phase_angle, f, rot_angle, tol_f=0.05):
@@ -164,15 +158,17 @@ def get_moon_data(time_str, R=1.0, resolution=512, location=None):
     else:
         distance_status = "Normal Moon"
     special = determine_special_moon(time_str, stage)
-    logging.info("Moon data collected:")
-    logging.info(f"  Phase angle: {phase_angle:.1f}°")
-    logging.info(f"  Illuminated fraction: {f:.3f}")
-    logging.info(f"  Rotation angle: {rot_angle:.1f}°")
-    logging.info(f"  Elongation: {elongation:.1f}°")
-    logging.info(f"  Distance: {distance:,.0f} km ({distance_status})")
-    logging.info(f"  Stage: {stage}")
-    logging.info(f"  Moon age: {moon_age:.1f} days")
-    logging.info(f"  Special: {special}")
+
+    logging.info("🌕 Moon data collected:")
+    logging.info(f"   🌙 Phase angle: {phase_angle:.1f}°")
+    logging.info(f"   ✨ Illuminated fraction: {f:.3f}")
+    logging.info(f"   🔄 Terminator rotation: {rot_angle:.1f}°")
+    logging.info(f"   📐 Elongation: {elongation:.1f}°")
+    logging.info(f"   📏 Distance: {distance:,.0f} km ({distance_status})")
+    logging.info(f"   🌓 Stage: {stage}")
+    logging.info(f"   ⏳ Moon age: {moon_age:.1f} days")
+    logging.info(f"   ⭐ Special: {special}")
+
     return {
         'phase_angle': phase_angle,
         'f': f,
@@ -200,7 +196,7 @@ def get_sun_vector_spice(time_str, location):
     sun_pos, lt = spice.spkpos("SUN", et, "J2000", "NONE", "MOON")
     sun_vec = np.array(sun_pos)
     S = sun_vec / np.linalg.norm(sun_vec)
-    logging.info(f"SPICE Moon-to-Sun vector: {S}")
+    logging.info(f"☀️ SPICE Moon-to-Sun vector: {S}")
 
     # Get the Moon position relative to Earth so we can compute the sub-observer vector.
     moon_pos, lt = spice.spkpos("MOON", et, "J2000", "NONE", "EARTH")
@@ -208,15 +204,11 @@ def get_sun_vector_spice(time_str, location):
     # Transform S into the Moon's local frame so that the sub-observer direction becomes [0, 0, 1].
     S_local = transform_sun_vector_to_local(S, moon_pos)
 
-    # For a nearly full Moon, force S_local to be [0, 0, 1].
+    # For a nearly full Moon, force S_local to be [0, 0, 1] (if needed).
     phase_angle, f, rot_angle, elongation, distance = compute_phase_and_position_angle(time_str, location=location)
-#     if f > 0.99:
-#         S_final = np.array([0.0, 0.0, 1.0])
-#     else:
     S_final = S_local
-    logging.info(f"Final SPICE Sun vector for illumination (local frame): {S_final}")
+    logging.info(f"🔆 Final Sun vector (local frame): {S_final}")
     return S_final
-
 
 def plot_shadow(moon_data, time_str, R=1.0, resolution=512, filename="output/shadow.png", location=None):
     """
@@ -240,42 +232,42 @@ def plot_shadow(moon_data, time_str, R=1.0, resolution=512, filename="output/sha
     X, Y = np.meshgrid(xs, ys)
     R2 = X**2 + Y**2
     mask = R2 <= R**2
-    logging.info(f"Grid shape: {X.shape}")
-    logging.info(f"Number of pixels inside disk: {np.sum(mask)}")
+    logging.info(f"🖼️ Grid shape: {X.shape}")
+    logging.info(f"🎯 Number of pixels inside disk: {np.sum(mask)}")
 
     # Compute z for pixels inside the disk.
     Z = np.zeros_like(X)
     Z[mask] = np.sqrt(R**2 - R2[mask])
 
-    # Compute illumination: dot product of (x,y,z) with S.
+    # Compute illumination: dot product of (x, y, z) with S.
     illumination = np.full_like(X, -1e10, dtype=float)
     illumination[mask] = X[mask]*S[0] + Y[mask]*S[1] + Z[mask]*S[2]
 
-    logging.info(f"Illumination stats (inside disk): min = {np.min(illumination[mask]):.3f}, "
-                  f"max = {np.max(illumination[mask]):.3f}, mean = {np.mean(illumination[mask]):.3f}, "
-                  f"median = {np.median(illumination[mask]):.3f}")
+    logging.info(f"📊 Illumination stats (inside disk): min = {np.min(illumination[mask]):.3f}, "
+                 f"max = {np.max(illumination[mask]):.3f}, mean = {np.mean(illumination[mask]):.3f}, "
+                 f"median = {np.median(illumination[mask]):.3f}")
     lit_pixels = np.sum(illumination[mask] > 0)
     shadow_pixels = np.sum(illumination[mask] <= 0)
-    logging.info(f"Number of lit pixels: {lit_pixels}, shadow pixels: {shadow_pixels}")
+    logging.info(f"💡 Lit pixels: {lit_pixels}, 🌑 Shadow pixels: {shadow_pixels}")
     percent_lit = lit_pixels / (lit_pixels + shadow_pixels) * 100
-    logging.info(f"Percentage of lit pixels: {percent_lit:.1f}%")
+    logging.info(f"📈 Percentage of lit pixels: {percent_lit:.5f}%")
 
     if (percent_lit != moon_data['f']*100):
-        logging.warning(f"Percentage of lit pixels does not match f: {percent_lit:.1f}% vs {moon_data['f']*100:.1f}%")
+        logging.warning(f"⚠️ Lit pixels percentage ({percent_lit:.5f}%) does not match illuminated fraction (f = {moon_data['f']*100:.5f}%)!")
 
     # Create an alpha channel: pixels with illumination > 0 (lit) have alpha 0;
-    # pixels with illumination <= 0 (shadow) get alpha 51 (~20% opacity).
+    # pixels with illumination ≤ 0 (shadow) get alpha 51 (~20% opacity).
     alpha = np.zeros_like(X, dtype=float)
     alpha[mask] = np.where(illumination[mask] > 0, 0, 51)
-    logging.info(f"Alpha channel stats (inside disk): min = {np.min(alpha[mask]):.1f}, "
-                  f"max = {np.max(alpha[mask]):.1f}, mean = {np.mean(alpha[mask]):.1f}")
+    logging.info(f"🌀 Alpha channel stats (inside disk): min = {np.min(alpha[mask]):.1f}, "
+                 f"max = {np.max(alpha[mask]):.1f}, mean = {np.mean(alpha[mask]):.1f}")
 
     # Build the RGBA image array (black with the computed alpha).
     img_array = np.zeros((resolution, resolution, 4), dtype=np.uint8)
     img_array[..., 3] = alpha.astype(np.uint8)
     shadow_img = Image.fromarray(img_array, mode="RGBA")
     shadow_img.save(filename)
-    logging.info(f"Shadow image saved to {filename}")
+    logging.info(f"💾 Shadow image saved to {filename}")
 
 def plot_white_moon(R=1.0, resolution=512, filename="output/moon.png"):
     """
@@ -293,7 +285,7 @@ def plot_white_moon(R=1.0, resolution=512, filename="output/moon.png"):
     plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
     plt.savefig(filename, transparent=True, bbox_inches=None, pad_inches=0)
     plt.close()
-    logging.info(f"White moon image saved to {filename}")
+    logging.info(f"🌝 White moon image saved to {filename}")
 
 def plot_final(filename="output/final.png"):
     """
@@ -306,21 +298,22 @@ def plot_final(filename="output/final.png"):
     shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(radius=blur_radius))
     final_img = Image.alpha_composite(moon_img, shadow_img)
     final_img.save(filename)
-    logging.info(f"Final composite image saved to {filename}")
+    logging.info(f"✨ Final composite image saved to {filename}")
 
 def main():
-    logging.info("Starting professional moon phase image generation with SPICE/SpiceyPy")
+    logging.info("🚀 Starting moon phase image generation with SPICE/SpiceyPy!")
     os.makedirs("output", exist_ok=True)
+
     # Set the observation time (UTC). Adjust as needed.
-    time_str = '2025-02-11T18:30:00'
-    logging.info(f"Observation time: {time_str}")
+    time_str = '2026-05-31T18:30:00'
+    logging.info(f"🕒 Observation time set to: {time_str}")
 
     # Set the observer location (EarthLocation object).
     location = new_zealand
-    logging.info(f"Observer location: {location}")
+    logging.info(f"📍 Observer location: {location}")
 
     R = 1  # Moon radius in arbitrary units.
-    resolution = 512  # Use fixed resolution for images.
+    resolution = 512  # Fixed resolution for images.
 
     # Compute Moon data.
     moon_data = get_moon_data(time_str, R, resolution=resolution, location=location)
@@ -332,11 +325,9 @@ def main():
     # Composite the images.
     plot_final(filename="output/final.png")
 
-    logging.info("Moon phase image generation complete")
-    for key, value in moon_data.items():
-        logging.info(f"{key}: {value}")
+    logging.info("✅ Moon phase image generation complete!")
 
-    # When done, clear all loaded SPICE kernels.
+    logging.debug("🧹 Clearing loaded SPICE kernels.")
     spice.kclear()
 
 if __name__ == '__main__':
