@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image.
-FROM python:3.14.3-slim@sha256:486b8092bfb12997e10d4920897213a06563449c951c5506c2a2cfaf591c599f
+FROM python:3.14.5-slim@sha256:a7185a8e40af01bf891414a4df16ef10fc6000cee460a404a13da9029fe41604
 
 # Install any system dependencies (e.g., gcc) that may be needed for building packages.
 RUN apt-get update && apt-get install -y --no-install-recommends \
